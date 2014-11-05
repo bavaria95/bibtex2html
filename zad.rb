@@ -1,6 +1,7 @@
 class Record
+
   def initialize(fields, type, tag)
-    @filds = fields
+    @fields = fields
     @type = type
     @tag = tag
   end
@@ -15,30 +16,62 @@ class Record
   end
 
   def to_s
+    html = <<-END
+    <table border="1"><tbody>
+        <tr>
+          <td valign="top" colspan="2">#{@type}
+          </td>
+        </tr>
+    END
 
+    @fields.each_pair do |key, value|
+        html += <<-END
+        <tr>
+          <td valign="top">#{key}<br />
+          </td>
+          <td valign="top">
+        END
+
+        if key == 'author' or key == 'editor'
+          html += '<ul>'
+          value.split(/ and /).each do |name|
+            html += "<li>#{name}</li>"
+          end
+          html += '</ul>'
+        else
+          html += "#{value}"
+        end
+
+      html += <<-END
+        </td>
+        </tr>
+      END
+    end
+
+    html += <<-END
+        </table>
+        <br>
+    END
   end
 
+  attr_accessor :fields, :type, :tag
 end
 
 class Records
   def initialize
     @records = []
-    # read
     parse_entries(read).each do |record|
       @records << Record.new(*Record.parse_data(record))
     end
   end
 
-  def ret_rec
-    @records
-  end
+  attr_accessor :records
 
   private
   def read
-    f = File.open('test.bib', 'r')
     text = ''
-    f.each_line {|l| text += l}
-    f.close
+    File.open('test.bib', 'r').each_line {|l| text += l}.close
+    text.gsub!(/{\noopsort{\d{4}\w}}/, '')
     text
   end
 
@@ -51,9 +84,10 @@ class Records
 
 end
 
-# text.gsub!(/{\noopsort{\d{4}\w}}/, '')
+# text.
 r = Records.new
-puts r.ret_rec
+puts r.records[-3]
+# puts r.ret_rec
 
 # a = []
 # text.scan(/@\w+{.*,\n[^@]*}/){|x| a << x}
