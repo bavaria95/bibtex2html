@@ -57,13 +57,16 @@ class Record
 end
 
 class Records
-  def initialize(file, file_output)
-    @file = file
-    @file_output = file_output
+  def initialize(argv)
+    @argv = argv
+    argv_processing
+    check_file
     @records = []
     parse_entries(read).each do |record|
       @records << Record.new(*Record.parse_data(record))
     end
+    make_order
+    write
   end
 
   include Enumerable
@@ -96,12 +99,6 @@ class Records
     html_all
   end
 
-  def write
-    file = File.open(@file_output, 'w')
-    file.write(to_s)
-    file.close
-  end
-
 
   private
   def read
@@ -117,52 +114,59 @@ class Records
     records
   end
 
+  def argv_processing
+    until @argv[0].nil? do
+      if @argv[0] == '-i' or @argv[0] == '--input'
+        @argv.shift
+        @file = @argv[0]
+        @argv.shift
+      end
+
+      if @argv[0] == '-o' or @argv[0] == '--output'
+        @argv.shift
+        @file_output = @argv[0]
+        @argv.shift
+      end
+
+      if @argv[0] == '-s' or @argv[0] == '--sort'
+        @argv.shift
+        @order = @argv[0]
+        @argv.shift
+        b = true
+      end
+
+      if @file.nil? or @file_output.nil?
+        puts 'wrong command. should be: '
+        puts "ruby #{$0} --input <path> --output <path> [--sort <order>]"
+        exit
+      end
+    end
+  end
+
+  def check_file
+    unless File.file?(@file)
+      puts 'There is not such file'
+      exit
+    end
+  end
+
+  def make_order
+    unless @order.nil?
+      @records.sort!{|x, y| x.type.downcase <=> y.type.downcase}
+
+      if @order.downcase == 'desc'
+        @records.reverse!
+      end
+    end
+  end
+
+  def write
+    file = File.open(@file_output, 'w')
+    file.write(to_s)
+    file.close
+  end
+
 end
 
 
-
-until ARGV[0].nil? do
-  if ARGV[0] == '-i' or ARGV[0] == '--input'
-    ARGV.shift
-    file = ARGV[0]
-    ARGV.shift
-  end
-
-  if ARGV[0] == '-o' or ARGV[0] == '--output'
-    ARGV.shift
-    file_output = ARGV[0]
-    ARGV.shift
-  end
-
-  if ARGV[0] == '-s' or ARGV[0] == '--sort'
-    ARGV.shift
-    order = ARGV[0]
-    ARGV.shift
-    b = true
-  end
-
-  if file.nil? or file_output.nil?
-    puts 'wrong command. should be: '
-    puts "ruby #{$0} --input <path> --output <path> [--sort <order>]"
-    exit
-  end
-end
-
-
-unless File.file?(file)
-  puts 'There is not such file'
-  exit
-end
-
-
-r = Records.new(file, file_output)
-
-unless order.nil?
-  r.sort!{|x, y| x.type.downcase <=> y.type.downcase}
-
-  if order.downcase == 'desc'
-    r.reverse!
-  end
-end
-
-r.write
+r = Records.new(ARGV)
