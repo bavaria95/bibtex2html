@@ -1,5 +1,6 @@
 class Record
 
+  attr_reader :type
   def initialize(fields, type, tag)
     @fields = fields
     @type = type
@@ -56,8 +57,9 @@ class Record
 end
 
 class Records
-  def initialize(file)
+  def initialize(file, file_output)
     @file = file
+    @file_output = file_output
     @records = []
     parse_entries(read).each do |record|
       @records << Record.new(*Record.parse_data(record))
@@ -70,7 +72,35 @@ class Records
     @records.each(&block)
   end
 
-  attr_accessor :records
+  def sort!(&block)
+    @records.sort!(&block)
+  end
+
+  def sort(&block)
+    @records.sort(&block)
+  end
+
+  def reverse!
+    @records.reverse!
+  end
+
+  def reverse
+    @records.reverse
+  end
+
+  def to_s
+    html_all = ''
+    @records.each do |record|
+      html_all += record.to_s
+    end
+    html_all
+  end
+
+  def write
+    file = File.open(@file_output, 'w')
+    file.write(to_s)
+    file.close
+  end
 
 
   private
@@ -89,7 +119,50 @@ class Records
 
 end
 
-r = Records.new('test.bib')
-r.each do |t|
-  puts t.to_s
+
+
+until ARGV[0].nil? do
+  if ARGV[0] == '-i' or ARGV[0] == '--input'
+    ARGV.shift
+    file = ARGV[0]
+    ARGV.shift
+  end
+
+  if ARGV[0] == '-o' or ARGV[0] == '--output'
+    ARGV.shift
+    file_output = ARGV[0]
+    ARGV.shift
+  end
+
+  if ARGV[0] == '-s' or ARGV[0] == '--sort'
+    ARGV.shift
+    order = ARGV[0]
+    ARGV.shift
+    b = true
+  end
+
+  if file.nil? or file_output.nil?
+    puts 'wrong command. should be: '
+    puts "ruby #{$0} --input <path> --output <path> [--sort <order>]"
+    exit
+  end
 end
+
+
+unless File.file?(file)
+  puts 'There is not such file'
+  exit
+end
+
+
+r = Records.new(file, file_output)
+
+unless order.nil?
+  r.sort!{|x, y| x.type.downcase <=> y.type.downcase}
+
+  if order.downcase == 'desc'
+    r.reverse!
+  end
+end
+
+r.write
