@@ -1,4 +1,0 @@
-# entry_type, tag = '', ''
-# text.scan(/@(\w+){(.*),/){|x, y| entry_type = x; tag = y}
-# text.scan(/\s*(\w+)\s*=[{'" ](.+)[}'", ],?\s*/){|x, y| fields[x] = y}
-# (fields.each_value {|value| value.gsub!(/"/, '')}).delete('key')
