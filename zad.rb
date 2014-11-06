@@ -53,24 +53,30 @@ class Record
         <br>
     END
   end
-
-  attr_accessor :fields, :type, :tag
 end
 
 class Records
-  def initialize
+  def initialize(file)
+    @file = file
     @records = []
     parse_entries(read).each do |record|
       @records << Record.new(*Record.parse_data(record))
     end
   end
 
+  include Enumerable
+
+  def each(&block)
+    @records.each(&block)
+  end
+
   attr_accessor :records
+
 
   private
   def read
     text = ''
-    File.open('test.bib', 'r').each_line {|l| text += l}.close
+    File.open(@file, 'r').each_line {|l| text += l}.close
     text.gsub!(/{\noopsort{\d{4}\w}}/, '')
     text
   end
@@ -81,15 +87,9 @@ class Records
     records
   end
 
-
 end
 
-# text.
-r = Records.new
-puts r.records[-3]
-# puts r.ret_rec
-
-# a = []
-# text.scan(/@\w+{.*,\n[^@]*}/){|x| a << x}
-
-# puts a.length
+r = Records.new('test.bib')
+r.each do |t|
+  puts t.to_s
+end
